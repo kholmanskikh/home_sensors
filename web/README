@@ -1,0 +1,4 @@
+Basic web interface to
+ - log sensors' data
+ - query the logged data
+ - show an overview with the latest data

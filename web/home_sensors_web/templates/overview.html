@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en_US">
+<head>
+    <meta charset="utf-8">
+    <title>Sensor measurements</title>
+</head>
+<body>
+{% for (loc, sensor_data) in overview_data.items() %}
+    <h2>{{ loc.name }}</h2>
+    {% for (sensor, measurements) in sensor_data.items() %}  
+        <h3>{{ sensor.name }}</h3>
+        {% for m in measurements %}
+            <p>{{ m[0] }} {{ m[1] }} ({{ m[2] }})</p>
+        {% endfor %}
+    {% endfor %}
+{% endfor %}
+</body>
