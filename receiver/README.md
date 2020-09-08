@@ -27,6 +27,7 @@ And build with `cmake`:
     mkdir build
     cd build
     cmake ..
+    make
 
 The generated binary will be `radio_receiver`.
 
