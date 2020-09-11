@@ -64,12 +64,18 @@ def new_measurement():
     mtype_id = validate_type(int, request.json.get('mtype_id'))
     value = validate_type(float, request.json.get('value'))
 
+    timestamp = request.json.get('timestamp')
+    if timestamp is None:
+        timestamp = int(time.time())
+    else:
+        timestamp = validate_type(int, timestamp)
+
     session = db.get_session()
 
     m = Measurement()
     m.mtype = MeasurementType.from_id(session, mtype_id)
     m.value = value
-    m.timestamp = int(time.time())
+    m.timestamp = timestamp
 
     sensor = Sensor.from_id(session, sensor_id)
     sensor.addMeasurement(session, m)
