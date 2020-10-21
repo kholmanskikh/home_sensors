@@ -53,8 +53,10 @@ def get_measurements():
         limit = validate_type(int, limit)
         if limit <= 0:
             raise ValidationError("'limit' must be positive")
+    else:
+        limit = 25
 
-        measurements = measurements.limit(limit)
+    measurements = measurements.limit(limit)
 
     return jsonify({ 'measurements': [ m.to_json() for m in measurements.all() ] })
 
