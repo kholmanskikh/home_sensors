@@ -33,12 +33,13 @@ func NewContext() (*Context, error) {
 
 	for {
 		p, err = C.zmq_ctx_new()
-		if !errors.Is(err, unix.EINTR) {
+
+		if (p != nil) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
 
-	if err != nil {
+	if p == nil {
 		return nil, err
 	}
 
@@ -47,15 +48,21 @@ func NewContext() (*Context, error) {
 
 func (ctx *Context) Terminate() error {
 	var err error
+	var rv C.int
 
 	for {
-		_, err = C.zmq_ctx_term(ctx.ctx)
-		if !errors.Is(err, unix.EINTR) {
+		rv, err = C.zmq_ctx_term(ctx.ctx)
+
+		if (rv == 0) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
 
-	return err
+	if rv != 0 {
+		return err
+	}
+
+	return nil
 }
 
 type Socket struct {
@@ -79,7 +86,8 @@ func NewSocket(ctx *Context, sockType socketType) (*Socket, error) {
 
 	for {
 		p, err = C.zmq_socket(ctx.ctx, tp)
-		if !errors.Is(err, unix.EINTR) {
+
+		if (p != nil) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
@@ -97,7 +105,8 @@ func (sock *Socket) Close() error {
 
 	for {
 		rv, err = C.zmq_close(sock.sock)
-		if !errors.Is(err, unix.EINTR) {
+
+		if (rv == 0) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
@@ -118,7 +127,8 @@ func (sock *Socket) GetFd() (int, error) {
 
 	for {
 		rv, err = C.zmq_getsockopt(sock.sock, C.ZMQ_FD, unsafe.Pointer(&fd), &l)
-		if !errors.Is(err, unix.EINTR) {
+
+		if (rv == 0) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
@@ -136,7 +146,8 @@ func (sock *Socket) Bind(endpoint string) error {
 
 	for {
 		rv, err = C.zmq_bind(sock.sock, C.CString(endpoint))
-		if !errors.Is(err, unix.EINTR) {
+
+		if (rv == 0) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
@@ -154,7 +165,8 @@ func (sock *Socket) Unbind(endpoint string) error {
 
 	for {
 		rv, err = C.zmq_unbind(sock.sock, C.CString(endpoint))
-		if !errors.Is(err, unix.EINTR) {
+
+		if (rv == 0) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
@@ -172,7 +184,8 @@ func (sock *Socket) Connect(endpoint string) error {
 
 	for {
 		rv, err = C.zmq_connect(sock.sock, C.CString(endpoint))
-		if !errors.Is(err, unix.EINTR) {
+
+		if (rv == 0) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
@@ -194,7 +207,8 @@ func (sock *Socket) doRecv(p []byte, flags C.int) (int, error) {
 
 	for {
 		rv, err = C.zmq_recv(sock.sock, unsafe.Pointer(&p[0]), C.size_t(len(p)), flags)
-		if !errors.Is(err, unix.EINTR) {
+
+		if (rv != -1) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
@@ -240,7 +254,8 @@ func (sock *Socket) Send(p []byte) error {
 
 	for {
 		rv, err = C.zmq_send(sock.sock, unsafe.Pointer(&p[0]), C.size_t(len(p)), 0)
-		if !errors.Is(err, unix.EINTR) {
+
+		if (rv != -1) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
@@ -326,12 +341,13 @@ func (sock *Socket) updateEventsState() (C.int, error) {
 
 	for {
 		rv, err = C.zmq_getsockopt(sock.sock, C.ZMQ_EVENTS, unsafe.Pointer(&bitmask), &l)
-		if !errors.Is(err, unix.EINTR) {
+
+		if (rv == 0) || (!errors.Is(err, unix.EINTR)) {
 			break
 		}
 	}
 
-	if rv == -1 {
+	if rv != 0 {
 		return 0, err
 	}
 
