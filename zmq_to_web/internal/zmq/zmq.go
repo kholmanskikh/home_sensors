@@ -5,11 +5,11 @@ package zmq
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"unsafe"
-    "errors"
 
-    "golang.org/x/sys/unix"
+	"golang.org/x/sys/unix"
 )
 
 type socketType int
@@ -28,15 +28,15 @@ type Context struct {
 }
 
 func NewContext() (*Context, error) {
-    var p unsafe.Pointer
-    var err error
+	var p unsafe.Pointer
+	var err error
 
-    for {
-	    p, err = C.zmq_ctx_new()
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		p, err = C.zmq_ctx_new()
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	if err != nil {
 		return nil, err
@@ -46,14 +46,14 @@ func NewContext() (*Context, error) {
 }
 
 func (ctx *Context) Terminate() error {
-    var err error
+	var err error
 
-    for {
-	    _, err = C.zmq_ctx_term(ctx.ctx)
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		_, err = C.zmq_ctx_term(ctx.ctx)
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	return err
 }
@@ -74,15 +74,15 @@ func NewSocket(ctx *Context, sockType socketType) (*Socket, error) {
 		return nil, fmt.Errorf("unsupported socket type %d", sockType)
 	}
 
-    var p unsafe.Pointer
-    var err error
+	var p unsafe.Pointer
+	var err error
 
-    for  {
-	    p, err = C.zmq_socket(ctx.ctx, tp)
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		p, err = C.zmq_socket(ctx.ctx, tp)
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	if p == nil {
 		return nil, err
@@ -92,15 +92,15 @@ func NewSocket(ctx *Context, sockType socketType) (*Socket, error) {
 }
 
 func (sock *Socket) Close() error {
-    var err error
-    var rv C.int
+	var err error
+	var rv C.int
 
-    for {
-	    rv, err = C.zmq_close(sock.sock)
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		rv, err = C.zmq_close(sock.sock)
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	if rv != 0 {
 		return err
@@ -111,17 +111,17 @@ func (sock *Socket) Close() error {
 
 func (sock *Socket) GetFd() (int, error) {
 	var fd C.int
-    l := C.size_t(unsafe.Sizeof(fd))
+	l := C.size_t(unsafe.Sizeof(fd))
 
-    var err error
-    var rv C.int
+	var err error
+	var rv C.int
 
-    for {
-	    rv, err = C.zmq_getsockopt(sock.sock, C.ZMQ_FD, unsafe.Pointer(&fd), &l)
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		rv, err = C.zmq_getsockopt(sock.sock, C.ZMQ_FD, unsafe.Pointer(&fd), &l)
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	if rv == -1 {
 		return -1, err
@@ -131,15 +131,15 @@ func (sock *Socket) GetFd() (int, error) {
 }
 
 func (sock *Socket) Bind(endpoint string) error {
-    var err error
-    var rv C.int
+	var err error
+	var rv C.int
 
-    for {
-	    rv, err = C.zmq_bind(sock.sock, C.CString(endpoint))
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		rv, err = C.zmq_bind(sock.sock, C.CString(endpoint))
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	if rv != 0 {
 		return err
@@ -149,15 +149,15 @@ func (sock *Socket) Bind(endpoint string) error {
 }
 
 func (sock *Socket) Unbind(endpoint string) error {
-    var err error
-    var rv C.int
+	var err error
+	var rv C.int
 
-    for {
-	    rv, err = C.zmq_unbind(sock.sock, C.CString(endpoint))
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		rv, err = C.zmq_unbind(sock.sock, C.CString(endpoint))
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	if rv != 0 {
 		return err
@@ -167,15 +167,15 @@ func (sock *Socket) Unbind(endpoint string) error {
 }
 
 func (sock *Socket) Connect(endpoint string) error {
-    var err error
-    var rv C.int
+	var err error
+	var rv C.int
 
-    for {
-	    rv, err = C.zmq_connect(sock.sock, C.CString(endpoint))
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		rv, err = C.zmq_connect(sock.sock, C.CString(endpoint))
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	if rv != 0 {
 		return err
@@ -185,49 +185,49 @@ func (sock *Socket) Connect(endpoint string) error {
 }
 
 func (sock *Socket) doRecv(p []byte, flags C.int) (int, error) {
-    if (p == nil) || (len(p) == 0) {
-        return 0, nil
-    }
+	if (p == nil) || (len(p) == 0) {
+		return 0, nil
+	}
 
-    var err error
-    var rv C.int
+	var err error
+	var rv C.int
 
-    for {
-        rv, err = C.zmq_recv(sock.sock, unsafe.Pointer(&p[0]), C.size_t(len(p)), flags)
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		rv, err = C.zmq_recv(sock.sock, unsafe.Pointer(&p[0]), C.size_t(len(p)), flags)
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
-    if rv == -1 {
-        return 0, err
-    }
+	if rv == -1 {
+		return 0, err
+	}
 
-    readLen := int(rv)
-    if readLen > len(p) {
-        return readLen, fmt.Errorf("received data was truncated")
-    }
+	readLen := int(rv)
+	if readLen > len(p) {
+		return readLen, fmt.Errorf("received data was truncated")
+	}
 
-    _, err = sock.updateEventsState()
-    if err != nil {
-        return 0, fmt.Errorf("updateEventsStatus(): %v", err)
-    }
+	_, err = sock.updateEventsState()
+	if err != nil {
+		return 0, fmt.Errorf("updateEventsStatus(): %v", err)
+	}
 
-    return readLen, nil
+	return readLen, nil
 }
 
 func (sock *Socket) Recv(p []byte) (int, error) {
-    return sock.doRecv(p, 0)
+	return sock.doRecv(p, 0)
 }
 
 func (sock *Socket) RecvNonBlocking(p []byte) (int, error, bool) {
-    readLen, err := sock.doRecv(p, C.ZMQ_DONTWAIT)
+	readLen, err := sock.doRecv(p, C.ZMQ_DONTWAIT)
 
-    if errors.Is(err, unix.EAGAIN) {
-        return 0, nil, false
-    }
+	if errors.Is(err, unix.EAGAIN) {
+		return 0, nil, false
+	}
 
-    return readLen, err, true
+	return readLen, err, true
 }
 
 func (sock *Socket) Send(p []byte) error {
@@ -235,24 +235,24 @@ func (sock *Socket) Send(p []byte) error {
 		return nil
 	}
 
-    var err error
-    var rv C.int
+	var err error
+	var rv C.int
 
-    for {
-        rv, err = C.zmq_send(sock.sock, unsafe.Pointer(&p[0]), C.size_t(len(p)), 0)
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		rv, err = C.zmq_send(sock.sock, unsafe.Pointer(&p[0]), C.size_t(len(p)), 0)
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	if rv == -1 {
 		return err
 	}
 
-    _, err = sock.updateEventsState()
-    if err != nil {
-        return fmt.Errorf("updateEventsStatus(): %v", err)
-    }
+	_, err = sock.updateEventsState()
+	if err != nil {
+		return fmt.Errorf("updateEventsStatus(): %v", err)
+	}
 
 	return nil
 }
@@ -279,16 +279,16 @@ func (sock *Socket) AddSubscribeFilter(prefix []byte) error {
 }
 
 func (sock *Socket) RemoveSubscribeFilter(prefix []byte) error {
-    var p unsafe.Pointer
-    var l C.size_t
+	var p unsafe.Pointer
+	var l C.size_t
 
-    if (prefix == nil) || (len(prefix) == 0) {
-        p = nil
-        l = 0
-    } else {
-        p = unsafe.Pointer(&prefix[0])
-        l = C.size_t(len(prefix))
-    }
+	if (prefix == nil) || (len(prefix) == 0) {
+		p = nil
+		l = 0
+	} else {
+		p = unsafe.Pointer(&prefix[0])
+		l = C.size_t(len(prefix))
+	}
 
 	rv, err := C.zmq_setsockopt(sock.sock, C.ZMQ_UNSUBSCRIBE, p, l)
 
@@ -318,31 +318,31 @@ func (sock *Socket) GetLastEndpoint() (string, error) {
 }
 
 func (sock *Socket) updateEventsState() (C.int, error) {
-    var bitmask C.int
-    l := C.size_t(unsafe.Sizeof(bitmask))
+	var bitmask C.int
+	l := C.size_t(unsafe.Sizeof(bitmask))
 
-    var err error
-    var rv C.int
+	var err error
+	var rv C.int
 
-    for {
-        rv, err = C.zmq_getsockopt(sock.sock, C.ZMQ_EVENTS, unsafe.Pointer(&bitmask), &l)
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		rv, err = C.zmq_getsockopt(sock.sock, C.ZMQ_EVENTS, unsafe.Pointer(&bitmask), &l)
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
-    if rv == -1 {
-        return 0, err
-    }
+	if rv == -1 {
+		return 0, err
+	}
 
-    return bitmask, nil
+	return bitmask, nil
 }
 
 func (sock *Socket) IsUnblockedForRecv() (bool, error) {
-    bitmask, err := sock.updateEventsState()
-    if err != nil {
-        return false, fmt.Errorf("updateEventsState() failed: %v", err)
-    }
+	bitmask, err := sock.updateEventsState()
+	if err != nil {
+		return false, fmt.Errorf("updateEventsState() failed: %v", err)
+	}
 
-    return bitmask & C.ZMQ_POLLIN != 0, nil
+	return bitmask&C.ZMQ_POLLIN != 0, nil
 }

@@ -39,14 +39,14 @@ func closeSocketOrFail(t *testing.T, sock *Socket) {
 }
 
 func TestSocketTypeString(t *testing.T) {
-    compareStrings := func(t *testing.T, got, expected string) {
-        if got != expected {
-            t.Fatalf("Got '%s', expected '%s'", got, expected)
-        }
-    }
+	compareStrings := func(t *testing.T, got, expected string) {
+		if got != expected {
+			t.Fatalf("Got '%s', expected '%s'", got, expected)
+		}
+	}
 
-    compareStrings(t, fmt.Sprint(SocketPUB), "PUB")
-    compareStrings(t, fmt.Sprint(SocketSUB), "SUB")
+	compareStrings(t, fmt.Sprint(SocketPUB), "PUB")
+	compareStrings(t, fmt.Sprint(SocketSUB), "SUB")
 }
 
 func TestContext(t *testing.T) {
@@ -56,7 +56,7 @@ func TestContext(t *testing.T) {
 }
 
 func TestSocketTypes(t *testing.T) {
-    const endpoint = "ipc://*"
+	const endpoint = "ipc://*"
 
 	ctx := createContextOrFail(t)
 	defer terminateContextOrFail(t, ctx)
@@ -89,76 +89,75 @@ func TestSocketTypes(t *testing.T) {
 }
 
 func TestGetFd(t *testing.T) {
-    const endpoint = "ipc://*"
+	const endpoint = "ipc://*"
 
-    ctx := createContextOrFail(t)
-    defer terminateContextOrFail(t, ctx)
+	ctx := createContextOrFail(t)
+	defer terminateContextOrFail(t, ctx)
 
-    sock := createSocketOrFail(t, ctx, SocketPUB)
-    defer closeSocketOrFail(t, sock)
+	sock := createSocketOrFail(t, ctx, SocketPUB)
+	defer closeSocketOrFail(t, sock)
 
-    if err := sock.Bind(endpoint); err != nil {
-        t.Fatalf("Bind() failed: %v", err)
-    }
+	if err := sock.Bind(endpoint); err != nil {
+		t.Fatalf("Bind() failed: %v", err)
+	}
 
-    fd, err := sock.GetFd()
-    if err != nil {
-        t.Fatalf("GetFd() failed: %v", err)
-    }
+	fd, err := sock.GetFd()
+	if err != nil {
+		t.Fatalf("GetFd() failed: %v", err)
+	}
 
-    if fd < 0 {
-        t.Fatalf("GetFd() returned '%d' which is negative", fd)
-    }
+	if fd < 0 {
+		t.Fatalf("GetFd() returned '%d' which is negative", fd)
+	}
 }
 
 func TestIsUnblockedForRecv(t *testing.T) {
-    const endpoint="tcp://127.0.0.1:5556"
+	const endpoint = "tcp://127.0.0.1:5556"
 
-    checkState := func(sock *Socket, expectedState bool) {
-        state, err := sock.IsUnblockedForRecv()
-        if err != nil {
-            t.Fatalf("IsUnblockedForRecv() failed: %v", err)
-        }
+	checkState := func(sock *Socket, expectedState bool) {
+		state, err := sock.IsUnblockedForRecv()
+		if err != nil {
+			t.Fatalf("IsUnblockedForRecv() failed: %v", err)
+		}
 
-        if state != expectedState {
-            t.Fatalf("Socket unblocked state is '%v', expected '%v",
-                        state, expectedState)
-        }
-    }
+		if state != expectedState {
+			t.Fatalf("Socket unblocked state is '%v', expected '%v",
+				state, expectedState)
+		}
+	}
 
-    ctx := createContextOrFail(t)
-    defer terminateContextOrFail(t, ctx)
+	ctx := createContextOrFail(t)
+	defer terminateContextOrFail(t, ctx)
 
-    sock := createSocketOrFail(t, ctx, SocketSUB)
-    defer closeSocketOrFail(t, sock)
+	sock := createSocketOrFail(t, ctx, SocketSUB)
+	defer closeSocketOrFail(t, sock)
 
 	if err := sock.Connect(endpoint); err != nil {
 		t.Fatalf("Connect() failed: %v", err)
 	}
 
-    if err := sock.AddSubscribeFilter([]byte("")); err != nil {
-        t.Fatalf("AddSubscribeFilter('') failed: %v", err)
-    }
+	if err := sock.AddSubscribeFilter([]byte("")); err != nil {
+		t.Fatalf("AddSubscribeFilter('') failed: %v", err)
+	}
 
-    dataChan := make(chan []byte)
-    defer close(dataChan)
+	dataChan := make(chan []byte)
+	defer close(dataChan)
 
-    err, errorChan := sendGoroutine(SocketPUB, endpoint, dataChan)
-    if err != nil {
-        t.Fatalf("Failed to initialize the send goroutine: %v", <-errorChan)
-    }
+	err, errorChan := sendGoroutine(SocketPUB, endpoint, dataChan)
+	if err != nil {
+		t.Fatalf("Failed to initialize the send goroutine: %v", <-errorChan)
+	}
 
-    checkState(sock, false)
+	checkState(sock, false)
 
-    for i := 0; i < 10; i++ {
-        dataChan <- []byte("msg")
-        if err = <-errorChan; err != nil {
-            t.Fatalf("Send() at %d-th iteration failed: %v", i+1, err)
-        }
+	for i := 0; i < 10; i++ {
+		dataChan <- []byte("msg")
+		if err = <-errorChan; err != nil {
+			t.Fatalf("Send() at %d-th iteration failed: %v", i+1, err)
+		}
 
-        time.Sleep(100*time.Millisecond)
-    }
+		time.Sleep(100 * time.Millisecond)
+	}
 
-    checkState(sock, true)
+	checkState(sock, true)
 }
-

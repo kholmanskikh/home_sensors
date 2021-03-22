@@ -1,9 +1,9 @@
 package zmq
 
 import (
+	"errors"
 	"fmt"
 	"time"
-    "errors"
 
 	"golang.org/x/sys/unix"
 )
@@ -20,7 +20,7 @@ func NewReadPoller(sockets ...*Socket) (*ReadPoller, error) {
 	}
 
 	poller := ReadPoller{}
-    poller.fdToSock = make(map[int]*Socket)
+	poller.fdToSock = make(map[int]*Socket)
 
 	for _, sock := range sockets {
 		fd, err := sock.GetFd()
@@ -39,15 +39,15 @@ func NewReadPoller(sockets ...*Socket) (*ReadPoller, error) {
 func (p *ReadPoller) Poll(timeout time.Duration) ([]*Socket, error) {
 	ret := make([]*Socket, 0)
 
-    var n int
-    var err error
+	var n int
+	var err error
 
-    for {
-	    n, err = unix.Poll(p.pollFds, int(timeout.Milliseconds()))
-        if !errors.Is(err, unix.EINTR) {
-            break
-        }
-    }
+	for {
+		n, err = unix.Poll(p.pollFds, int(timeout.Milliseconds()))
+		if !errors.Is(err, unix.EINTR) {
+			break
+		}
+	}
 
 	if n == -1 {
 		return nil, fmt.Errorf("poll() failed with: %v", err)
@@ -59,17 +59,17 @@ func (p *ReadPoller) Poll(timeout time.Duration) ([]*Socket, error) {
 			break
 		}
 
-		if pollFd.Revents & unix.POLLIN != 0 {
-            sock := p.fdToSock[int(pollFd.Fd)]
+		if pollFd.Revents&unix.POLLIN != 0 {
+			sock := p.fdToSock[int(pollFd.Fd)]
 
-            unblocked, err := sock.IsUnblockedForRecv()
-            if err != nil {
-                return ret, fmt.Errorf("IsUnblockedForRecv(%v) failed: %v", sock, err)
-            }
+			unblocked, err := sock.IsUnblockedForRecv()
+			if err != nil {
+				return ret, fmt.Errorf("IsUnblockedForRecv(%v) failed: %v", sock, err)
+			}
 
-            if unblocked {
-                ret = append(ret, sock)
-            }
+			if unblocked {
+				ret = append(ret, sock)
+			}
 
 			processed += 1
 		}
