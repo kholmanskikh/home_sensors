@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"zmq_to_web/internal/zmq"
+    zmq "github.com/kholmanskikh/home_sensors/zmq_api"
 )
 
 type Subscriber struct {
