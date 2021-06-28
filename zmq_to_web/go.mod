@@ -2,4 +2,4 @@ module zmq_to_web
 
 go 1.13
 
-require golang.org/x/sys v0.0.0-20210301091718-77cc2087c03b
+require github.com/kholmanskikh/home_sensors/zmq_api v0.0.0-20210628145029-2631ca9da45e

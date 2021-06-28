@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"strings"
 	"time"
+
+	"github.com/kholmanskikh/home_sensors/zmq_api"
 )
 
 var zmqPollTimeout = time.Second * 5
@@ -82,7 +84,7 @@ Usage: %s --endpoint "..." --apiurl "..." [ --debug ]
 		return
 	}
 
-	subscriber, err := NewSubscriber(*zmqEndpoint)
+	subscriber, err := zmq_api.NewSubscriber(*zmqEndpoint)
 	if err != nil {
 		log.Printf("NewSubscriber() failed: %v", err)
 		return

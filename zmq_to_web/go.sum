@@ -1,2 +1,4 @@
-golang.org/x/sys v0.0.0-20210301091718-77cc2087c03b h1:kHlr0tATeLRMEiZJu5CknOw/E8V6h69sXXQFGoPtjcc=
-golang.org/x/sys v0.0.0-20210301091718-77cc2087c03b/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+github.com/kholmanskikh/home_sensors/zmq_api v0.0.0-20210628145029-2631ca9da45e h1:PHgGF3APkX6XpesiKLVJW+F/lsTx5l6EOF/eXQk974k=
+github.com/kholmanskikh/home_sensors/zmq_api v0.0.0-20210628145029-2631ca9da45e/go.mod h1:MwVSDWLMK5IfzztKJR8INRl2NxpCQ6Rh6wB8pg+j2Vc=
+golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 h1:RqytpXGR1iVNX7psjB3ff8y7sNFinVFvkx1c8SjBkio=
+golang.org/x/sys v0.0.0-20210616094352-59db8d763f22/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
+
+	"github.com/kholmanskikh/home_sensors/zmq_api"
 )
 
 type WebApi struct {
@@ -83,7 +85,7 @@ func (api *WebApi) UpdateMtypeIds() error {
 	return nil
 }
 
-func (api *WebApi) PublishMeasurement(m Measurement) error {
+func (api *WebApi) PublishMeasurement(m zmq_api.Measurement) error {
 	api.mtypeToIdMux.Lock()
 	mtypeId, found := api.mtypeToId[m.Type]
 	api.mtypeToIdMux.Unlock()
