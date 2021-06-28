@@ -1,4 +1,4 @@
-package zmq_api
+package zmq
 
 // #cgo LDFLAGS: -lzmq
 // #include <zmq.h>

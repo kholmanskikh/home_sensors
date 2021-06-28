@@ -1,4 +1,4 @@
-package main
+package zmq_api
 
 type Measurement struct {
 	DeviceId  int

@@ -1,4 +1,4 @@
-package main
+package zmq_api
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-    zmq "github.com/kholmanskikh/home_sensors/zmq_api"
+	"github.com/kholmanskikh/home_sensors/zmq_api/zmq"
 )
 
 type sendWorker struct {

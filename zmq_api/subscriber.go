@@ -1,11 +1,11 @@
-package main
+package zmq_api
 
 import (
 	"encoding/json"
 	"fmt"
 	"time"
 
-    zmq "github.com/kholmanskikh/home_sensors/zmq_api"
+	"github.com/kholmanskikh/home_sensors/zmq_api/zmq"
 )
 
 type Subscriber struct {
