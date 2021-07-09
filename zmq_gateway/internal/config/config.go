@@ -1,27 +1,27 @@
 package config
 
 import (
-    "os"
-    "io/ioutil"
-    "fmt"
-    "encoding/json"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
 )
 
 type Config struct {
-    ZMQEndpoint string `json:"zmq_endpoint"`
-    Debug bool `json:"debug"`
+	ZMQEndpoint string `json:"zmq_endpoint"`
+	Debug       bool   `json:"debug"`
 
-    Publisher string `json:"publisher"`
+	Publisher string `json:"publisher"`
 
-    // Web
-    WebURL string `json:"web_url"`
-    WebUpdateTypesInterval int `json:"web_update_types_interval"`
+	// Web
+	WebURL                 string `json:"web_url"`
+	WebUpdateTypesInterval int    `json:"web_update_types_interval"`
 
-    //MQTT
-    MQTTBroker string `json:"mqtt_broker"`
-    MQTTUser string `json:"mqtt_user"`
-    MQTTPassword string `json:"mqtt_password"`
-    MQTTTopic string `json:"mqtt_topic"`
+	//MQTT
+	MQTTBroker   string `json:"mqtt_broker"`
+	MQTTUser     string `json:"mqtt_user"`
+	MQTTPassword string `json:"mqtt_password"`
+	MQTTTopic    string `json:"mqtt_topic"`
 }
 
 var Format string = `{
@@ -42,69 +42,68 @@ var Format string = `{
 }`
 
 func ParseFromFile(path string) (*Config, error) {
-    config := Config{}
+	config := Config{}
 
-    file, err := os.Open(path)
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
 
-    bytes, err := ioutil.ReadAll(file)
-    if err != nil {
-        return nil, fmt.Errorf("unable to read: %v", err)
-    }
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read: %v", err)
+	}
 
-    if err := json.Unmarshal(bytes, &config); err != nil {
-        return nil, fmt.Errorf("unable to parse json: %v", err)
-    }
+	if err := json.Unmarshal(bytes, &config); err != nil {
+		return nil, fmt.Errorf("unable to parse json: %v", err)
+	}
 
-    if config.ZMQEndpoint == "" {
-        return nil, fmt.Errorf("zmq_endpoint must be set")
-    }
+	if config.ZMQEndpoint == "" {
+		return nil, fmt.Errorf("zmq_endpoint must be set")
+	}
 
-    switch (config.Publisher) {
-    case "web":
-        err = validateWebConfig(&config)
-    case "mqtt":
-        err = validateMQTTConfig(&config)
-    default:
-        err = fmt.Errorf("unsupported Publisher '%s'", config.Publisher)
-    }
+	switch config.Publisher {
+	case "web":
+		err = validateWebConfig(&config)
+	case "mqtt":
+		err = validateMQTTConfig(&config)
+	default:
+		err = fmt.Errorf("unsupported Publisher '%s'", config.Publisher)
+	}
 
-    if err != nil {
-        return nil, err
-    }
+	if err != nil {
+		return nil, err
+	}
 
-    return &config, nil
+	return &config, nil
 }
 
 func validateWebConfig(config *Config) error {
-    if config.WebURL == "" {
-        return fmt.Errorf("web_url must be set")
-    }
+	if config.WebURL == "" {
+		return fmt.Errorf("web_url must be set")
+	}
 
-    if config.WebUpdateTypesInterval <= 0 {
-        return fmt.Errorf("invalid value for web_update_types_interval: %d",
-                            config.WebUpdateTypesInterval)
-    }
+	if config.WebUpdateTypesInterval <= 0 {
+		return fmt.Errorf("invalid value for web_update_types_interval: %d",
+			config.WebUpdateTypesInterval)
+	}
 
-    return nil
+	return nil
 }
 
 func validateMQTTConfig(config *Config) error {
-    if config.MQTTBroker == "" {
-        return fmt.Errorf("mqtt_broker must be set")
-    }
+	if config.MQTTBroker == "" {
+		return fmt.Errorf("mqtt_broker must be set")
+	}
 
-    if config.MQTTTopic == "" {
-        return fmt.Errorf("mqtt_topic must be set")
-    }
+	if config.MQTTTopic == "" {
+		return fmt.Errorf("mqtt_topic must be set")
+	}
 
-    if (config.MQTTUser == "") && (config.MQTTPassword != "") {
-        return fmt.Errorf("mqtt_password is set for an empty mqtt_user")
-    }
+	if (config.MQTTUser == "") && (config.MQTTPassword != "") {
+		return fmt.Errorf("mqtt_password is set for an empty mqtt_user")
+	}
 
-    return nil
+	return nil
 }
-

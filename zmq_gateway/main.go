@@ -10,10 +10,10 @@ import (
 
 	"github.com/kholmanskikh/home_sensors/zmq_api"
 
-    "zmq_gateway/internal/config"
-    "zmq_gateway/internal/publisher"
-    "zmq_gateway/internal/publisher/web"
-    "zmq_gateway/internal/publisher/mqtt"
+	"zmq_gateway/internal/config"
+	"zmq_gateway/internal/publisher"
+	"zmq_gateway/internal/publisher/mqtt"
+	"zmq_gateway/internal/publisher/web"
 )
 
 var zmqPollTimeout = time.Second * 5
@@ -24,7 +24,7 @@ func main() {
 		os.Exit(ret)
 	}()
 
-    configFile := flag.String("c", "", "Config file")
+	configFile := flag.String("c", "", "Config file")
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(),
@@ -37,18 +37,18 @@ The config file is a JSON file of form:
 `, os.Args[0], config.Format)
 	}
 
-    flag.Parse()
+	flag.Parse()
 
-    if *configFile == "" {
-        flag.Usage()
-        return
-    }
+	if *configFile == "" {
+		flag.Usage()
+		return
+	}
 
-    config, err := config.ParseFromFile(*configFile)
-    if err != nil {
-        log.Println(err)
-        return
-    }
+	config, err := config.ParseFromFile(*configFile)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	subscriber, err := zmq_api.NewSubscriber(config.ZMQEndpoint)
 	if err != nil {
@@ -58,36 +58,36 @@ The config file is a JSON file of form:
 	defer subscriber.Destroy()
 	log.Printf("ZMQ Endpoint: %s", subscriber.Endpoint)
 
-    var publisher publisher.Publisher
-    switch (config.Publisher) {
-    case "web":
-        publisher, err = web.NewWebPublisher(config.WebURL,
-                                            time.Duration(config.WebUpdateTypesInterval) * time.Second)
-    case "mqtt":
-        publisher, err = mqtt.NewMQTTPublisher(config.MQTTBroker,
-                                            config.MQTTUser, config.MQTTPassword,
-                                            config.MQTTTopic)
-    default:
-        err = fmt.Errorf("unknown publisher type: %s", config.Publisher)
-    }
+	var publisher publisher.Publisher
+	switch config.Publisher {
+	case "web":
+		publisher, err = web.NewWebPublisher(config.WebURL,
+			time.Duration(config.WebUpdateTypesInterval)*time.Second)
+	case "mqtt":
+		publisher, err = mqtt.NewMQTTPublisher(config.MQTTBroker,
+			config.MQTTUser, config.MQTTPassword,
+			config.MQTTTopic)
+	default:
+		err = fmt.Errorf("unknown publisher type: %s", config.Publisher)
+	}
 
 	if err != nil {
 		log.Printf("unable to create a publisher: %v", err)
 		return
 	}
-    defer func() {
-        if err := publisher.Destroy(); err != nil {
-            log.Printf("Error while destroying the publisher: %v", err)
-            ret = 1
-        }
-    }()
+	defer func() {
+		if err := publisher.Destroy(); err != nil {
+			log.Printf("Error while destroying the publisher: %v", err)
+			ret = 1
+		}
+	}()
 
-    log.Printf("Publisher: %s", publisher.Description())
+	log.Printf("Publisher: %s", publisher.Description())
 
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt)
 
-    log.Printf("Begin operating")
+	log.Printf("Begin operating")
 
 	ret = 0
 	for {

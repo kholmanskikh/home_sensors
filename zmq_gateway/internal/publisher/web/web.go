@@ -7,16 +7,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
-    "time"
+	"time"
 
 	"github.com/kholmanskikh/home_sensors/zmq_api"
 )
 
 type WebPublisher struct {
-	BaseUrl string
-    UpdateTypesInterval time.Duration
+	BaseUrl             string
+	UpdateTypesInterval time.Duration
 
-    lastUpdated time.Time
+	lastUpdated time.Time
 
 	mtypesUrl       string
 	measurementsUrl string
@@ -38,7 +38,7 @@ func NewWebPublisher(baseUrl string, updateTypesInterval time.Duration) (*WebPub
 		return nil, fmt.Errorf("UpdateMtypeIds() failed: %v", err)
 	}
 
-    publisher.lastUpdated = time.Now()
+	publisher.lastUpdated = time.Now()
 
 	return &publisher, nil
 }
@@ -92,15 +92,14 @@ func (publisher *WebPublisher) updateMtypeIds() error {
 }
 
 func (publisher *WebPublisher) PublishMeasurement(m zmq_api.Measurement) error {
-    if time.Since(publisher.lastUpdated) > publisher.UpdateTypesInterval {
-        err := publisher.updateMtypeIds()
-        if err != nil {
-            return nil
-        }
+	if time.Since(publisher.lastUpdated) > publisher.UpdateTypesInterval {
+		err := publisher.updateMtypeIds()
+		if err != nil {
+			return nil
+		}
 
-        publisher.lastUpdated = time.Now()
-    }
-
+		publisher.lastUpdated = time.Now()
+	}
 
 	publisher.mtypeToIdMux.Lock()
 	mtypeId, found := publisher.mtypeToId[m.Type]
@@ -142,10 +141,9 @@ func (publisher *WebPublisher) PublishMeasurement(m zmq_api.Measurement) error {
 }
 
 func (publisher *WebPublisher) Description() string {
-    return fmt.Sprintf("Web Publisher (url '%s')", publisher.BaseUrl)
+	return fmt.Sprintf("Web Publisher (url '%s')", publisher.BaseUrl)
 }
 
 func (publisher *WebPublisher) Destroy() error {
-    return nil
+	return nil
 }
-

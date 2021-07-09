@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-    "time"
 	"testing"
+	"time"
 
 	"net/http"
 	"net/http/httptest"
 
-    "github.com/kholmanskikh/home_sensors/zmq_api"
+	"github.com/kholmanskikh/home_sensors/zmq_api"
 )
 
 func TestWebPublisherEmptyMtypesOutput(t *testing.T) {
