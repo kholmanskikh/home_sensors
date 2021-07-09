@@ -1,17 +1,16 @@
+# do not forget to 'go vendor' the source code
 FROM golang:latest AS builder
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y libzmq3-dev
-WORKDIR /go/src/zmq_to_web
+WORKDIR /go/src/zmq_gateway
 COPY . .
-RUN go get -v
-RUN go build -v
 
 FROM debian:stable-slim
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y libzmq5
-COPY --from=builder /go/src/zmq_to_web/zmq_to_web /bin/zmq_to_web
-RUN groupadd zmq_to_web && \
-    useradd -g zmq_to_web -s /usr/sbin/nologin -d /tmp zmq_to_web
-USER zmq_to_web 
-ENTRYPOINT ["/bin/zmq_to_web"]
+COPY --from=builder /go/src/zmq_gateway/zmq_gateway /bin/zmq_gateway
+RUN groupadd zmq_gateway && \
+    useradd -g zmq_gateway -s /usr/sbin/nologin -d /tmp zmq_gateway
+USER zmq_gateway
+ENTRYPOINT ["/bin/zmq_gateway"]
