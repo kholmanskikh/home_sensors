@@ -6,56 +6,17 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
 	"github.com/kholmanskikh/home_sensors/zmq_api"
+
+    "zmq_to_web/internal/config"
+    "zmq_to_web/internal/publisher"
+    "zmq_to_web/internal/publisher/web"
+    "zmq_to_web/internal/publisher/mqtt"
 )
 
 var zmqPollTimeout = time.Second * 5
-var updateSupportedTypesInterval = 60 * time.Minute
-
-func isEqualStringSlices(a, b []string) bool {
-	if (a == nil) && (b == nil) {
-		return true
-	}
-
-	if (a == nil) || (b == nil) {
-		return false
-	}
-
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i := 0; i < len(a); i++ {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
-func updateSupportedTypes(api *WebApi, sleepInterval time.Duration) {
-	for {
-		time.Sleep(sleepInterval)
-
-		origTypes := api.SupportedTypes()
-		err := api.UpdateMtypeIds()
-		if err != nil {
-			log.Printf("Unable to update supported types: %v", err)
-			continue
-		}
-
-		newTypes := api.SupportedTypes()
-
-		if !isEqualStringSlices(origTypes, newTypes) {
-			log.Printf("The list of supported types was updated to: %s",
-				strings.Join(newTypes, ", "))
-		}
-	}
-}
 
 func main() {
 	ret := 1
@@ -63,47 +24,70 @@ func main() {
 		os.Exit(ret)
 	}()
 
-	debugMode := flag.Bool("debug", false, "Enable debug output")
-	zmqEndpoint := flag.String("endpoint", "", "ZMQ endpoint (tcp://1.2.3.4:5555)")
-	webApiBaseUrl := flag.String("apiurl", "", "The web API url (http://1.2.3.4/api)")
-	flag.Parse()
+    configFile := flag.String("c", "", "Config file")
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(),
-			`Reads measurements from the ZMQ endpoint and posts them to the HTTP API.
+			`Reads measurements from the ZMQ endpoint and posts them to HTTP or MQTT.
 
-Usage: %s --endpoint "..." --apiurl "..." [ --debug ]
+Usage: %s -c "<path_to_config_file>"
 
-`, os.Args[0])
-		fmt.Fprintf(flag.CommandLine.Output(), "hello\n\n")
-		flag.PrintDefaults()
+The config file is a JSON file of form:
+%s
+`, os.Args[0], config.Format)
 	}
 
-	if (*zmqEndpoint == "") || (*webApiBaseUrl == "") {
-		flag.Usage()
-		return
-	}
+    flag.Parse()
 
-	subscriber, err := zmq_api.NewSubscriber(*zmqEndpoint)
+    if *configFile == "" {
+        flag.Usage()
+        return
+    }
+
+    config, err := config.ParseFromFile(*configFile)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+
+	subscriber, err := zmq_api.NewSubscriber(config.ZMQEndpoint)
 	if err != nil {
 		log.Printf("NewSubscriber() failed: %v", err)
 		return
 	}
 	defer subscriber.Destroy()
-	log.Printf("Connected to %s", subscriber.Endpoint)
+	log.Printf("ZMQ Endpoint: %s", subscriber.Endpoint)
 
-	api, err := NewWebApi(*webApiBaseUrl)
+    var publisher publisher.Publisher
+    switch (config.Publisher) {
+    case "web":
+        publisher, err = web.NewWebPublisher(config.WebURL,
+                                            time.Duration(config.WebUpdateTypesInterval) * time.Second)
+    case "mqtt":
+        publisher, err = mqtt.NewMQTTPublisher(config.MQTTBroker,
+                                            config.MQTTUser, config.MQTTPassword,
+                                            config.MQTTTopic)
+    default:
+        err = fmt.Errorf("unknown publisher type: %s", config.Publisher)
+    }
+
 	if err != nil {
-		log.Printf("NewWebApi() failed: %v", err)
+		log.Printf("unable to create a publisher: %v", err)
 		return
 	}
-	log.Printf("Posting messages to %s", api.BaseUrl)
-	log.Printf("Supported measurement types: %s", strings.Join(api.SupportedTypes(), ", "))
+    defer func() {
+        if err := publisher.Destroy(); err != nil {
+            log.Printf("Error while destroying the publisher: %v", err)
+            ret = 1
+        }
+    }()
 
-	go updateSupportedTypes(api, updateSupportedTypesInterval)
+    log.Printf("Publisher: %s", publisher.Description())
 
 	stopChan := make(chan os.Signal, 1)
 	signal.Notify(stopChan, os.Interrupt)
+
+    log.Printf("Begin operating")
 
 	ret = 0
 	for {
@@ -122,11 +106,11 @@ Usage: %s --endpoint "..." --apiurl "..." [ --debug ]
 		}
 
 		for _, m := range measurements {
-			if *debugMode {
+			if config.Debug {
 				log.Printf("Received %#v", *m)
 			}
 
-			err = api.PublishMeasurement(*m)
+			err = publisher.PublishMeasurement(*m)
 			if err != nil {
 				log.Printf("PublishMeasurement() failed: %v", err)
 			}

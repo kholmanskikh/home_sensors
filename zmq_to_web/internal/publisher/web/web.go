@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"bytes"
@@ -7,12 +7,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
+    "time"
 
 	"github.com/kholmanskikh/home_sensors/zmq_api"
 )
 
-type WebApi struct {
+type WebPublisher struct {
 	BaseUrl string
+    UpdateTypesInterval time.Duration
+
+    lastUpdated time.Time
 
 	mtypesUrl       string
 	measurementsUrl string
@@ -21,35 +25,37 @@ type WebApi struct {
 	mtypeToIdMux *sync.Mutex
 }
 
-func NewWebApi(baseUrl string) (*WebApi, error) {
-	api := WebApi{BaseUrl: baseUrl,
+func NewWebPublisher(baseUrl string, updateTypesInterval time.Duration) (*WebPublisher, error) {
+	publisher := WebPublisher{BaseUrl: baseUrl,
 		mtypesUrl:       baseUrl + "/mtypes/",
 		measurementsUrl: baseUrl + "/measurements/"}
 
-	api.mtypeToId = make(map[string]int)
-	api.mtypeToIdMux = &sync.Mutex{}
+	publisher.mtypeToId = make(map[string]int)
+	publisher.mtypeToIdMux = &sync.Mutex{}
 
-	err := api.UpdateMtypeIds()
+	err := publisher.updateMtypeIds()
 	if err != nil {
 		return nil, fmt.Errorf("UpdateMtypeIds() failed: %v", err)
 	}
 
-	return &api, nil
+    publisher.lastUpdated = time.Now()
+
+	return &publisher, nil
 }
 
-func (api *WebApi) SupportedTypes() []string {
+func (publisher *WebPublisher) SupportedTypes() []string {
 	ret := make([]string, 0)
 
-	api.mtypeToIdMux.Lock()
-	for mtype, _ := range api.mtypeToId {
+	publisher.mtypeToIdMux.Lock()
+	for mtype, _ := range publisher.mtypeToId {
 		ret = append(ret, mtype)
 	}
-	api.mtypeToIdMux.Unlock()
+	publisher.mtypeToIdMux.Unlock()
 
 	return ret
 }
 
-func (api *WebApi) UpdateMtypeIds() error {
+func (publisher *WebPublisher) updateMtypeIds() error {
 	type mtype struct {
 		Id   int    `json:"id"`
 		Name string `json:"name"`
@@ -58,7 +64,7 @@ func (api *WebApi) UpdateMtypeIds() error {
 		Mtypes []mtype `json:"mtypes"`
 	}
 
-	resp, err := http.Get(api.mtypesUrl)
+	resp, err := http.Get(publisher.mtypesUrl)
 	if err != nil {
 		return err
 	}
@@ -75,20 +81,30 @@ func (api *WebApi) UpdateMtypeIds() error {
 		return err
 	}
 
-	api.mtypeToIdMux.Lock()
-	api.mtypeToId = make(map[string]int)
+	publisher.mtypeToIdMux.Lock()
+	publisher.mtypeToId = make(map[string]int)
 	for _, mtype := range mtypes.Mtypes {
-		api.mtypeToId[mtype.Name] = mtype.Id
+		publisher.mtypeToId[mtype.Name] = mtype.Id
 	}
-	api.mtypeToIdMux.Unlock()
+	publisher.mtypeToIdMux.Unlock()
 
 	return nil
 }
 
-func (api *WebApi) PublishMeasurement(m zmq_api.Measurement) error {
-	api.mtypeToIdMux.Lock()
-	mtypeId, found := api.mtypeToId[m.Type]
-	api.mtypeToIdMux.Unlock()
+func (publisher *WebPublisher) PublishMeasurement(m zmq_api.Measurement) error {
+    if time.Since(publisher.lastUpdated) > publisher.UpdateTypesInterval {
+        err := publisher.updateMtypeIds()
+        if err != nil {
+            return nil
+        }
+
+        publisher.lastUpdated = time.Now()
+    }
+
+
+	publisher.mtypeToIdMux.Lock()
+	mtypeId, found := publisher.mtypeToId[m.Type]
+	publisher.mtypeToIdMux.Unlock()
 
 	if !found {
 		return fmt.Errorf("unsupported measurement type '%s'", m.Type)
@@ -111,7 +127,7 @@ func (api *WebApi) PublishMeasurement(m zmq_api.Measurement) error {
 		return err
 	}
 
-	resp, err := http.Post(api.measurementsUrl, "application/json", bytes.NewReader(data))
+	resp, err := http.Post(publisher.measurementsUrl, "application/json", bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
@@ -124,3 +140,12 @@ func (api *WebApi) PublishMeasurement(m zmq_api.Measurement) error {
 
 	return nil
 }
+
+func (publisher *WebPublisher) Description() string {
+    return fmt.Sprintf("Web Publisher (url '%s')", publisher.BaseUrl)
+}
+
+func (publisher *WebPublisher) Destroy() error {
+    return nil
+}
+
