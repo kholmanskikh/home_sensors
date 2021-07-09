@@ -1,4 +1,4 @@
-module zmq_to_web
+module zmq_gateway
 
 go 1.13
 

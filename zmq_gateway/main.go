@@ -10,10 +10,10 @@ import (
 
 	"github.com/kholmanskikh/home_sensors/zmq_api"
 
-    "zmq_to_web/internal/config"
-    "zmq_to_web/internal/publisher"
-    "zmq_to_web/internal/publisher/web"
-    "zmq_to_web/internal/publisher/mqtt"
+    "zmq_gateway/internal/config"
+    "zmq_gateway/internal/publisher"
+    "zmq_gateway/internal/publisher/web"
+    "zmq_gateway/internal/publisher/mqtt"
 )
 
 var zmqPollTimeout = time.Second * 5
