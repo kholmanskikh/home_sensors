@@ -5,6 +5,7 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y libzmq3-dev
 WORKDIR /go/src/zmq_gateway
 COPY . .
+RUN go build -v -mod vendor
 
 FROM debian:stable-slim
 RUN apt-get update && \
