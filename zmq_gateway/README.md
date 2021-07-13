@@ -1,1 +1,3 @@
-The go version of zmq_to_web_python
+This program subscribes to a ZMQ socket and
+publishes each measurement either to a WEB or MQTT
+endpoint.
