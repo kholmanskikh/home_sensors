@@ -8,6 +8,8 @@ to a ZMQ socket.
 
 # Dependencies
 
+A C++ compiler (tested only with GCC), `cmake` and the following libs:
+
 * [Optimized High Speed Driver for nRF24L01(+) 2.4GHz Wireless Transceiver][1]
 * [ZeroMQ C library][2]
 * [cxxopts][3]
@@ -15,29 +17,32 @@ to a ZMQ socket.
 
 # Build steps
 
-Install RF24 and ZMQ libraries in such a way so the linker will know
-where to find them.  
+Install [2] in such a way so the compiler/linker will know where
+to find them. All other dependencies are in `extern` as git submodules.
 
-Place the sources of the cxxopts library to `extern/cxxopts`.
+Typical build procedure:
 
-Place the sources of the json library to `extern/json`.
-
-And build with `cmake`:
-
-    mkdir build
-    cd build
-    cmake ..
-    make
-
-The generated binary will be `radio_receiver`.
+```sh
+git clone --recurse-submodules --shallow-submodules <repo>
+cd <repo>
+# Note, the SPIDEV driver will be used. It's set in CMakeLists.txt
+# Other drivers/options were not tested
+cmake -B build_dir
+cmake --build build_dir
+# This will install the executable along with the RF24 shared lib
+cmake --install build_dir --prefix <your prefix>
+```
 
 # How to run
 
 To get a list of supported options:
 
-    ./radio_receiver --help
+```sh
+LD_LIBRARY_PATH="<your prefix>/lib" "<your prefix>/bin/radio_receiver" --help
+```
 
-[1]: http://tmrh20.github.io/RF24/
+
+[1]: https://nrf24.github.io/RF24/
 [2]: https://zeromq.org/
 [3]: https://github.com/jarro2783/cxxopts
 [4]: https://github.com/nlohmann/json
