@@ -35,9 +35,9 @@ int main(int argc, char** argv) {
         ("l,listen", "Radio listen address",
             cxxopts::value<std::vector<std::string>>()->default_value("0Node"))
         ("e,cepin", "GPIO pin connected to the radio CE pin",
-            cxxopts::value<unsigned int>()->default_value("22"))
+            cxxopts::value<rf24_gpio_pin_t>()->default_value("22"))
         ("s,cspin", "SPI CS pin (0, 1, ...)",
-            cxxopts::value<unsigned int>()->default_value("0"))
+            cxxopts::value<rf24_gpio_pin_t>()->default_value("0"))
         ("p,publish", "ZMQ Publish interface",
             cxxopts::value<std::string>()->default_value("tcp://127.0.0.1:5555"))
         ("d,debug", "Enable debugging",
@@ -55,15 +55,15 @@ int main(int argc, char** argv) {
     auto debug = opts["debug"].as<bool>();
     std::cout << "Debugging: " << ((debug) ? "enabled" : "disabled") << std::endl;
 
-    Receiver receiver(opts["cepin"].as<unsigned int>(),
-                        opts["cspin"].as<unsigned int>(),
+    Receiver receiver(opts["cepin"].as<rf24_gpio_pin_t>(),
+                        opts["cspin"].as<rf24_gpio_pin_t>(),
                         opts["listen"].as<std::vector<std::string>>());
     receiver.init();
 
     Publisher publisher(opts["publish"].as<std::string>());
 
-    std::cout << "Radio chip: Chip Enable pin = " << receiver.cepin() <<
-        " , Chip Select SPI pin = " << receiver.cspin() << std::endl;
+    std::cout << "Radio chip: Chip Enable pin = " << +receiver.cepin() <<
+        " , Chip Select SPI pin = " << +receiver.cspin() << std::endl;
 
     auto addr = receiver.addr();
     std::cout << "Receiving radio messages for addresses: " <<

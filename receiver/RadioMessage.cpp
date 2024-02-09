@@ -19,7 +19,7 @@ std::string RadioMessage::toJsonString() const {
 }
 
 std::ostream& operator<<(std::ostream& os, const struct RadioMessage& msg) {
-    os << "Timestamp: " << msg.timestamp << ", Device id: " << msg.device_id << ", ";
+    os << "Timestamp: " << msg.timestamp << ", Device id: " << +msg.device_id << ", ";
 
     os << RadioMessageTypeToString(msg.type) << ": ";
 

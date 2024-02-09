@@ -10,10 +10,10 @@ struct RadioMessage {
         Humidity,
         Error,
     };
-
-    unsigned long long timestamp = 0;
-    unsigned int device_id = 0;
     Type type;
+
+    int64_t timestamp = 0;
+    uint8_t device_id = 0;
     double value = 0.0;
     std::string error;
 

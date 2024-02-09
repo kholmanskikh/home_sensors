@@ -1,5 +1,5 @@
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 
 #define MSG_TEMP 0x0
 #define MSG_HUMID 0x1

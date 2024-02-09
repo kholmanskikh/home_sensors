@@ -1,17 +1,17 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <RF24/RF24.h>
+#include "RF24.h"
 #include "RadioMessage.hpp"
 
 class Receiver {
 public:
-    Receiver(unsigned int cepin, unsigned int cspin,
+    Receiver(rf24_gpio_pin_t cepin, rf24_gpio_pin_t cspin,
                 const std::vector<std::string>& addr);
     ~Receiver();
 
-    unsigned int cepin() const;
-    unsigned int cspin() const;
+    rf24_gpio_pin_t cepin() const;
+    rf24_gpio_pin_t cspin() const;
     std::vector<std::string> addr() const;
 
     void init();
@@ -20,8 +20,9 @@ public:
 
 private:
     RF24 *radio;
-    unsigned int cepin_;
-    unsigned int cspin_;
+    rf24_gpio_pin_t cepin_;
+    rf24_gpio_pin_t cspin_;
     std::vector<std::string> addr_;
-    const int buf_len = 64;
+
+    uint8_t buffer[64];
 };

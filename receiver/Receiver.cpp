@@ -7,12 +7,12 @@
 #include "RadioMessage.hpp"
 #include "radio_protocol.h"
 
-Receiver::Receiver(unsigned int cepin, unsigned int cspin,
+Receiver::Receiver(rf24_gpio_pin_t cepin, rf24_gpio_pin_t cspin,
                      const std::vector<std::string>& addr) {
     if ((addr.size() == 0) || (addr.size() > 5))
         throw std::runtime_error("Cannot listen more than 5 addresses");
 
-    addr_ = addr;
+    addr_ = std::vector<std::string>(addr);
     cepin_ = cepin;
     cspin_ = cspin;
     radio = new RF24(cepin_, cspin_);
@@ -23,11 +23,11 @@ Receiver::~Receiver() {
     delete radio;
 }
 
-unsigned int Receiver::cepin() const {
+rf24_gpio_pin_t Receiver::cepin() const {
     return cepin_;
 }
 
-unsigned int Receiver::cspin() const {
+rf24_gpio_pin_t Receiver::cspin() const {
     return cspin_;
 }
 
@@ -41,12 +41,12 @@ void Receiver::init() {
     if (!radio->isChipConnected())
         throw std::runtime_error("Radio chip is not responding");
 
-    if (buf_len < radio->getPayloadSize())
+    if (sizeof(buffer) < radio->getPayloadSize())
         throw std::runtime_error("Radio payload size is greater than buffer");
 
     radio->setPALevel(RF24_PA_LOW);
 
-    for (size_t i = 0; i < addr_.size(); i++)
+    for (uint8_t i = 0; i < addr_.size(); i++)
         radio->openReadingPipe(i + 1, (uint8_t *)addr_[i].c_str());
 
     radio->startListening();
@@ -58,13 +58,12 @@ bool Receiver::messageAvailable() {
 
 struct RadioMessage Receiver::receiveMessage() {
     auto now = std::chrono::system_clock::now();
-    auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+    int64_t timestamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
 
-    char buf[buf_len];
-    memset(buf, 0, buf_len);
-    radio->read(&buf, buf_len);
+    memset(buffer, 0, sizeof(buffer));
+    radio->read(buffer, sizeof(buffer));
 
-    struct radio_message* rmsg = (struct radio_message*)buf;
+    struct radio_message* rmsg = (struct radio_message*)buffer;
 
     struct RadioMessage msg;
     if (rmsg->type == MSG_TEMP) {
@@ -72,8 +71,8 @@ struct RadioMessage Receiver::receiveMessage() {
             msg.type = RadioMessage::Type::Error;
 
             std::stringstream s;
-            s << "Temperature value (" << rmsg->temp.i << ", " <<
-                rmsg->temp.f << ") is invalid";
+            s << "Temperature value (" << +rmsg->temp.i << ", " <<
+                +rmsg->temp.f << ") is invalid";
 
             msg.error = s.str();
         } else {
@@ -81,12 +80,12 @@ struct RadioMessage Receiver::receiveMessage() {
             msg.value = rmsg->temp.i + rmsg->temp.f * 0.01;
         }
     } else if (rmsg->type == MSG_HUMID) {
-        if ((rmsg->humid.f >= 100) || (rmsg->humid.i < 0) || (rmsg->humid.f >= 100)) {
+        if ((!rmsg->humid.f) || (rmsg->humid.f >= 100) || (!rmsg->humid.i) || (rmsg->humid.i >= 100)) {
             msg.type = RadioMessage::Type::Error;
 
             std::stringstream s;
-            s << "Humidity value (" << rmsg->humid.i << ", " <<
-                rmsg->humid.f << ") is invalid";
+            s << "Humidity value (" << +rmsg->humid.i << ", " <<
+                +rmsg->humid.f << ") is invalid";
 
             msg.error = s.str();
         } else {
@@ -109,7 +108,7 @@ struct RadioMessage Receiver::receiveMessage() {
                      break;
         }
     } else {
-        throw std::runtime_error("Invalid type in radio_message");
+        msg.error = "Invalid type in radio_message";
     }
 
     msg.timestamp = timestamp;
