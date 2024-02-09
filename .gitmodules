@@ -1,0 +1,9 @@
+[submodule "receiver/extern/json"]
+	path = receiver/extern/json
+	url = https://github.com/nlohmann/json.git
+[submodule "receiver/extern/cxxopts"]
+	path = receiver/extern/cxxopts
+	url = https://github.com/jarro2783/cxxopts
+[submodule "receiver/extern/RF24"]
+	path = receiver/extern/RF24
+	url = https://github.com/nRF24/RF24.git
